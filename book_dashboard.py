@@ -100,7 +100,6 @@ def df_with_index_for_display(df: pd.DataFrame) -> pd.DataFrame:
         df2 = pd.DataFrame(columns=['Índice', 'ID', 'Título', 'Custo (R$)', 'Venda (R$)', 'Lucro (R$)'])
     return df2
 
-
 def to_csv_bytes(df: pd.DataFrame) -> bytes:
     return df.to_csv(index=False, float_format="%.2f", encoding='utf-8-sig').encode('utf-8-sig')
 
@@ -253,13 +252,23 @@ with st.form("book_form", clear_on_submit=False):
                     st.experimental_rerun()
 
 # Delete action (separado, com confirmação)
+# Controle de estado para confirmação
+if 'confirm_delete' not in st.session_state:
+    st.session_state.confirm_delete = False
+
 if selected_book_id is not None:
-    if st.button("Excluir o livro selecionado", key="delbtn"):
-        # confirmação
-        if st.confirm(f"Confirmar exclusão do livro selecionado (ID {selected_book_id})?"):
+    if not st.session_state.confirm_delete:
+        if st.button("Excluir o livro selecionado", key="delbtn"):
+            st.session_state.confirm_delete = True
+    else:
+        confirmar = st.checkbox(f"Confirmar exclusão do livro selecionado (ID {selected_book_id})")
+        if confirmar:
             delete_book_db(selected_book_id)
             st.success("Livro excluído.")
+            st.session_state.confirm_delete = False
             st.experimental_rerun()
+        if st.button("Cancelar"):
+            st.session_state.confirm_delete = False
 
 # ---------- Charts section (grandes, responsivos) ----------
 st.markdown("### 📊 Análise visual")
